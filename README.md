@@ -1,2 +1,2 @@
-# retail-commerce-square
+# retail
 Synvya Retail Commerce for Square Merchants

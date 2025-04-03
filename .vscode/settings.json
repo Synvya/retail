@@ -1,0 +1,6 @@
+{
+    "python.defaultInterpreterPath": "~/.venvs/square/bin/python",
+    "python.analysis.extraPaths": [
+        "~/.venvs/square/lib/python3.12/site-packages"
+    ]
+}
