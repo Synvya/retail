@@ -1,0 +1,52 @@
+[build-system]
+requires = ["setuptools>=45", "wheel", "setuptools_scm"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "retail"
+version = "0.1.0"
+description = "Synvya Retail Commerce application supporting plugins for Square and Shopify."
+authors = [
+    {name = "Alejandro", email = "alejandro@synvya.com"}
+]
+readme = "README.md"
+license = {text = "MIT"}
+dependencies = [
+    "fastapi>=0.110.0",
+    "uvicorn[standard]>=0.28.1",
+    "sqlalchemy>=2.0.29",
+    "psycopg2-binary>=2.9.9",
+    "python-dotenv>=1.0.1",
+    "requests>=2.31.0",
+    "squareup>=20.1.0",
+    "synvya_sdk>=0.2.0"
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=8.1.1",
+    "mypy>=1.11.1",
+    "pylint>=3.1.0",
+    "black>=23.3.0",
+    "isort>=5.10.1"
+]
+
+[tool.setuptools]
+package-dir = {"" = "src"}
+packages = ["retail"]
+exclude-package-data = {"*" = ["tests/*", "tests/**/*"]}
+
+[tool.setuptools_scm]
+version_scheme = "guess-next-dev"
+local_scheme = "node-and-date" 
+
+[tool.mypy]
+plugins = ["sqlalchemy.ext.mypy.plugin"]
+
+[tool.black]
+line-length = 88
+target-version = ['py39']
+include = '\.pyi?$'
+
+[tool.isort]
+profile = "black"

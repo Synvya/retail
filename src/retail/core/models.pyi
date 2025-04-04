@@ -2,30 +2,27 @@
 Database models used for OAuth token storage and merchant-related data.
 """
 
-import datetime
+from datetime import datetime
 
 from sqlalchemy import DateTime, String, text
 from sqlalchemy.orm import Mapped, mapped_column
 
 from retail.core.database import Base
 
-
 class OAuthToken(Base):
     """
-    Represents an OAuth token associated with a merchant.
+    Represents an OAuth token used for authentication.
 
     Attributes:
-        merchant_id (str): Unique identifier for the merchant.
-        access_token (str): OAuth access token for authenticating API requests.
-        environment (str): Specifies if the token is for 'sandbox' or 'production'.
-        created_at (datetime): Timestamp when the OAuth token was created.
+        merchant_id (str): The ID of the merchant associated with the token.
+        access_token (str): The access token used for authentication.
+        environment (str): The environment in which the token is used (e.g., sandbox, production).
+        created_at (datetime.datetime): The timestamp when the token was created.
     """
-
-    __tablename__ = "oauth_tokens"
 
     merchant_id: Mapped[str] = mapped_column(String, primary_key=True, index=True)
     access_token: Mapped[str] = mapped_column(String, nullable=False)
     environment: Mapped[str] = mapped_column(String, default="sandbox", nullable=False)
-    created_at: Mapped[datetime.datetime] = mapped_column(
+    created_at: Mapped[datetime] = mapped_column(
         DateTime, server_default=text("CURRENT_TIMESTAMP")
     )
