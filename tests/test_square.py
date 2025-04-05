@@ -8,14 +8,26 @@ created successfully and prints the public and private keys. In case of an error
 it captures and prints the error message.
 """
 
-import sys
-
 import pytest
 from sqlalchemy.orm import Session
+from square.client import Client  # type: ignore
 
 from retail.core.database import SessionLocal
+from retail.core.dependencies import get_square_client
 from retail.core.models import OAuthToken
-from retail.core.profile_ops import fetch_and_prepare_profile  # type: ignore
+from retail.plugins.square import (
+    get_merchant_info,
+    get_merchant_private_key,
+    populate_synvya_profile,
+)
+
+
+@pytest.fixture(scope="session", name="client")
+def client_fixture() -> Client:
+    """
+    Fixture to get the Square client.
+    """
+    return get_square_client()
 
 
 def retrieve_oauth_token() -> tuple[str, str]:
@@ -39,19 +51,31 @@ def retrieve_oauth_token() -> tuple[str, str]:
         db.close()
 
 
-def test_fetch_and_prepare_profile():
+def test_get_merchant_info(client: Client):
     """
-    This function is used to test the Square API integration.
+    Test get_merchant_info.
     """
-    try:
-        oauth_token, environment = retrieve_oauth_token()
-        profile = fetch_and_prepare_profile(oauth_token, environment)
-        assert profile is not None, "Failed to create Synvya Profile."
-        assert hasattr(profile, "public_key"), "Profile missing public_key attribute."
-        # No longer asserting the private_key
-    except Exception as e:
-        pytest.fail(f"Test failed due to error: {e}")
+    merchant_info = get_merchant_info(client)
+    assert merchant_info is not None, "Failed to get merchant info."
 
 
-if __name__ == "__main__":
-    test_fetch_and_prepare_profile()
+def test_get_merchant_private_key(client: Client):
+    """
+    Test get_merchant_private_key.
+    """
+    merchant_info = get_merchant_info(client)
+    merchant_id = merchant_info["id"]
+    private_key = get_merchant_private_key(merchant_id, client)
+    assert private_key is not None, "Failed to get merchant private key."
+
+
+def test_populate_synvya_profile(client: Client):
+    """
+    Test populate_synvya_profile.
+    """
+    merchant_info = get_merchant_info(client)
+    merchant_id = merchant_info["id"]
+    private_key = get_merchant_private_key(merchant_id, client)
+    assert private_key is not None, "Failed to get merchant private key."
+    profile = populate_synvya_profile(merchant_info, private_key)
+    assert profile is not None, "Failed to populate Synvya profile."
