@@ -1,6 +1,6 @@
 repos:
   - repo: https://github.com/psf/black
-    rev: 23.3.0  # Use the latest stable version or the version you have installed
+    rev: 24.1.1  # Updated to latest stable version that supports Python 3.12
     hooks:
       - id: black
 

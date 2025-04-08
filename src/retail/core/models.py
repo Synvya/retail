@@ -19,6 +19,7 @@ class OAuthToken(Base):
         access_token (str): OAuth access token for authenticating API requests.
         environment (str): Specifies if the token is for 'sandbox' or 'production'.
         created_at (datetime): Timestamp when the OAuth token was created.
+        private_key (str): Private key for Synvya integration.
     """
 
     __tablename__ = "oauth_tokens"
@@ -29,3 +30,4 @@ class OAuthToken(Base):
     created_at: Mapped[datetime.datetime] = mapped_column(
         DateTime, server_default=text("CURRENT_TIMESTAMP")
     )
+    private_key: Mapped[str | None] = mapped_column(String, nullable=True)

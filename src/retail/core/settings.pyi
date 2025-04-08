@@ -1,3 +1,4 @@
+# pylint: disable=missing-docstring,unused-argument
 """
 Settings for the retail application.
 """
@@ -29,14 +30,19 @@ class SquareSettings(BaseSettings):
     environment: str = "sandbox"
     access_token: str = ""
     redirect_uri: str = SQUARE_OAUTH_REDIRECT_URI
+    jwt_secret_key: str = ""
+    jwt_algorithm: str = "HS256"
+    jwt_access_token_expire_minutes: int = 30
 
-class ShopifySettings(BaseSettings):
+class ShopifySettings:
     """
     Settings for the Shopify API.
     """
 
-    api_key: str = ""
-    api_secret: str = ""
-    access_token: str = ""
-    environment: str = "development"
-    redirect_uri: str = "http://localhost:8000/shopify/oauth/callback"
+    api_key: str
+    api_secret: str
+    access_token: str
+    environment: str
+    redirect_uri: str
+
+def get_settings(provider: Provider) -> SquareSettings | ShopifySettings: ...

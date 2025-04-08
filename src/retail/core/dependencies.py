@@ -34,9 +34,7 @@ def get_square_client() -> Client:
         raise ValueError("Settings are not of type SquareSettings")
 
     client = Client(
-        bearer_auth_credentials=BearerAuthCredentials(
-            access_token=settings.access_token
-        ),
+        bearer_auth_credentials=BearerAuthCredentials(access_token=settings.access_token),
         environment=settings.environment,
     )
     return client

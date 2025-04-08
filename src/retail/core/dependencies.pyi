@@ -5,7 +5,7 @@ FastAPI dependencies for the retail application.
 from functools import lru_cache
 
 from pydantic_settings import BaseSettings
-from square.client import Client  # type: ignore
+from square.client import Client
 
 from .settings import Provider
 

@@ -1,28 +1,29 @@
-"""Square plugin module."""
+# pylint: disable=missing-docstring,unused-argument
+"""Type stubs for Square plugin."""  # noqa: D100
 
-from fastapi import APIRouter
+from typing import Any, Generator
+
+from fastapi import APIRouter, Request
 from sqlalchemy.orm import Session
-from square.client import Client  # type: ignore
+from square.client import Client
 from synvya_sdk import Profile
 
+from retail.core.auth import TokenData
+from retail.core.models import OAuthToken
 from retail.core.settings import SquareSettings
 
 router: APIRouter
 
-def get_db() -> Session: ...
+def get_db() -> Generator[Session, None, None]: ...
+def get_square_credentials(
+    current_merchant: TokenData,
+    db: Session,
+) -> OAuthToken: ...
 def create_square_router(
     client: Client,
     settings: SquareSettings,
     square_base_url: str,
     square_api_url: str,
 ) -> APIRouter: ...
-def get_merchant_info(client: Client) -> dict: ...
-def get_merchant_private_key(merchant_id: str, client: Client) -> str | None: ...
-def store_merchant_private_key(
-    merchant_id: str, private_key: str, client: Client
-) -> None: ...
-def create_private_key_attribute(
-    settings: SquareSettings,
-    square_api_url: str,
-) -> None: ...
-def populate_synvya_profile(merchant_data: dict, private_key: str) -> Profile: ...
+def get_merchant_info(client: Client) -> dict[str, Any]: ...
+def populate_synvya_profile(merchant_data: dict[str, Any], private_key: str) -> Profile: ...

@@ -31,6 +31,9 @@ class SquareSettings(BaseSettings):
     environment: str = "sandbox"
     access_token: str = ""
     redirect_uri: str = SQUARE_OAUTH_REDIRECT_URI
+    jwt_secret_key: str = ""
+    jwt_algorithm: str = "HS256"
+    jwt_access_token_expire_minutes: int = 30
 
     model_config = SettingsConfigDict(
         env_file=".env",
