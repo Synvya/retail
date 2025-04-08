@@ -15,10 +15,10 @@ from sqlalchemy.orm import Session
 from square.client import Client
 from synvya_sdk import Profile
 
-from retail.core.database import SessionLocal
-from retail.core.dependencies import get_square_client
-from retail.core.models import OAuthToken
-from retail.plugins.square import get_merchant_info, populate_synvya_profile
+from retail_backend.core.database import SessionLocal
+from retail_backend.core.dependencies import get_square_client
+from retail_backend.core.models import OAuthToken
+from retail_backend.plugins.square import get_merchant_info, populate_synvya_profile
 
 
 @pytest.fixture(scope="session", name="client")

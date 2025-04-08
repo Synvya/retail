@@ -10,10 +10,10 @@ from sqlalchemy.orm import Session
 from square.client import Client
 from synvya_sdk import Profile, generate_keys
 
-from retail.core.auth import TokenData, create_access_token, get_current_merchant
-from retail.core.database import SessionLocal
-from retail.core.models import OAuthToken
-from retail.core.settings import SQUARE_OAUTH_REDIRECT_URI, SquareSettings
+from retail_backend.core.auth import TokenData, create_access_token, get_current_merchant
+from retail_backend.core.database import SessionLocal
+from retail_backend.core.models import OAuthToken
+from retail_backend.core.settings import SQUARE_OAUTH_REDIRECT_URI, SquareSettings
 
 
 def get_db() -> Generator[Session, None, None]:

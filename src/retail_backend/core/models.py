@@ -7,7 +7,7 @@ import datetime
 from sqlalchemy import DateTime, String, text
 from sqlalchemy.orm import Mapped, mapped_column
 
-from retail.core.database import Base
+from retail_backend.core.database import Base
 
 
 class OAuthToken(Base):

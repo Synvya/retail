@@ -2,7 +2,7 @@
 
 from fastapi import FastAPI
 
-from retail.core.settings import Provider
+from retail_backend.core.settings import Provider
 
 app: FastAPI
 

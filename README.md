@@ -38,7 +38,7 @@ Backend API for Synvya Retail Commerce platform, providing integration with Squa
 
 5. Start the development server:
    ```
-   uvicorn src.retail.core.main:app --reload
+   uvicorn src.retail_backend.core.main:app --reload
    ```
 
 ## License

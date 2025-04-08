@@ -5,15 +5,15 @@ import os
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from retail.api.v1 import auth
-from retail.core.dependencies import (
+from retail_backend.api.v1 import auth
+from retail_backend.core.dependencies import (
     get_settings,
     get_square_api_url,
     get_square_base_url,
     get_square_client,
 )
-from retail.core.settings import Provider, SquareSettings
-from retail.plugins.square import create_square_router
+from retail_backend.core.settings import Provider, SquareSettings
+from retail_backend.plugins.square import create_square_router
 
 app = FastAPI(
     title="Retail API",
@@ -53,6 +53,6 @@ app.include_router(auth.router, prefix="/api/v1")
 
 
 @app.get("/")
-async def root():
+async def root() -> dict:
     """Root endpoint."""
     return {"message": "Welcome to the Retail API"}

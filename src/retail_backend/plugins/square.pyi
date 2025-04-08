@@ -8,9 +8,9 @@ from sqlalchemy.orm import Session
 from square.client import Client
 from synvya_sdk import Profile
 
-from retail.core.auth import TokenData
-from retail.core.models import OAuthToken
-from retail.core.settings import SquareSettings
+from retail_backend.core.auth import TokenData
+from retail_backend.core.models import OAuthToken
+from retail_backend.core.settings import SquareSettings
 
 router: APIRouter
 

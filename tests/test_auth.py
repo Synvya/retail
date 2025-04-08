@@ -6,9 +6,10 @@ import pytest
 from fastapi import HTTPException
 from fastapi.security import HTTPAuthorizationCredentials
 
-from retail.core.auth import TokenData, create_access_token, get_current_merchant
-from retail.core.models import OAuthToken
-from retail.core.settings import SquareSettings
+from retail_backend.core.auth import TokenData, create_access_token, get_current_merchant
+from retail_backend.core.database import SessionLocal
+from retail_backend.core.models import OAuthToken
+from retail_backend.core.settings import SquareSettings
 
 
 @pytest.fixture
@@ -28,7 +29,7 @@ def mock_settings() -> SquareSettings:
 
 def test_create_access_token(mock_settings: SquareSettings) -> None:
     """Test JWT token creation."""
-    with patch("retail.core.dependencies.get_settings", return_value=mock_settings):
+    with patch("retail_backend.core.dependencies.get_settings", return_value=mock_settings):
         merchant_id = "test_merchant_123"
         token = create_access_token(merchant_id)
         assert token is not None
@@ -37,7 +38,7 @@ def test_create_access_token(mock_settings: SquareSettings) -> None:
 
 def test_token_validation(mock_settings: SquareSettings) -> None:
     """Test JWT token validation."""
-    with patch("retail.core.dependencies.get_settings", return_value=mock_settings):
+    with patch("retail_backend.core.dependencies.get_settings", return_value=mock_settings):
         merchant_id = "test_merchant_123"
         token = create_access_token(merchant_id)
 
@@ -56,7 +57,7 @@ def test_token_validation(mock_settings: SquareSettings) -> None:
 
 def test_invalid_token(mock_settings: SquareSettings) -> None:
     """Test invalid token handling."""
-    with patch("retail.core.dependencies.get_settings", return_value=mock_settings):
+    with patch("retail_backend.core.dependencies.get_settings", return_value=mock_settings):
         # Create a mock credentials object that matches HTTPAuthorizationCredentials
         class MockCredentials(HTTPAuthorizationCredentials):
             def __init__(self, token: str) -> None:
@@ -71,8 +72,6 @@ def test_invalid_token(mock_settings: SquareSettings) -> None:
 
 def test_merchant_reuses_private_key(mock_settings: SquareSettings) -> None:
     """Test that existing merchants reuse their private key during reauthorization."""
-    from retail.core.database import SessionLocal
-
     # Create a test database session
     db = SessionLocal()
 
@@ -132,9 +131,9 @@ def test_merchant_reuses_private_key(mock_settings: SquareSettings) -> None:
         mock_request = type("MockRequest", (), {})
 
         # Mock the create_access_token function
-        with patch("retail.core.auth.create_access_token", return_value="jwt_token"):
+        with patch("retail_backend.core.auth.create_access_token", return_value="jwt_token"):
             # Mock the oauth_callback function directly
-            with patch("retail.plugins.square.create_square_router") as mock_router:
+            with patch("retail_backend.plugins.square.create_square_router") as mock_router:
                 # Create a mock router with a mock oauth_callback function
                 mock_router.return_value = type(
                     "MockRouter",
@@ -149,7 +148,6 @@ def test_merchant_reuses_private_key(mock_settings: SquareSettings) -> None:
                 )
 
                 # Import the module to trigger the router creation
-                import retail.plugins.square
 
                 # Manually update the database to simulate what the oauth_callback would do
                 token = db.query(OAuthToken).filter_by(merchant_id=merchant_id).first()

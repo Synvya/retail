@@ -8,8 +8,8 @@ from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from jose import JWTError, jwt
 from pydantic import BaseModel
 
-from retail.core.dependencies import get_settings
-from retail.core.settings import Provider, SquareSettings
+from retail_backend.core.dependencies import get_settings
+from retail_backend.core.settings import Provider, SquareSettings
 
 security = HTTPBearer()
 

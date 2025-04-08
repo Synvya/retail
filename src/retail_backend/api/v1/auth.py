@@ -2,7 +2,7 @@
 
 from fastapi import APIRouter, Depends
 
-from retail.core.auth import TokenData, create_access_token, get_current_merchant
+from retail_backend.core.auth import TokenData, create_access_token, get_current_merchant
 
 router = APIRouter(prefix="/auth", tags=["auth"])
 
