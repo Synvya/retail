@@ -3,7 +3,7 @@ requires = ["hatchling"]
 build-backend = "hatchling.build"
 
 [project]
-name = "retail"
+name = "retail-backend"
 version = "0.1.0"
 description = "Retail API for Square integration"
 authors = [
