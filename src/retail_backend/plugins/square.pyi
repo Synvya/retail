@@ -3,7 +3,7 @@
 
 from typing import Any, Generator
 
-from fastapi import APIRouter, Request
+from fastapi import APIRouter
 from sqlalchemy.orm import Session
 from square.client import Client
 from synvya_sdk import Profile

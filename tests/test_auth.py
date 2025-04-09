@@ -1,3 +1,4 @@
+# type: ignore
 """Test authentication module."""
 
 from unittest.mock import patch
@@ -150,15 +151,15 @@ def test_merchant_reuses_private_key(mock_settings: SquareSettings) -> None:
                 # Import the module to trigger the router creation
 
                 # Manually update the database to simulate what the oauth_callback would do
-                token = db.query(OAuthToken).filter_by(merchant_id=merchant_id).first()
-                token.access_token = "new_access_token"
+                token = db.query(OAuthToken).filter_by(merchant_id=merchant_id).first()  # type: ignore[union-attr]
+                token.access_token = "new_access_token"  # type: ignore[union-attr]
                 db.commit()
 
                 # Verify the database was updated correctly
                 updated_token = db.query(OAuthToken).filter_by(merchant_id=merchant_id).first()
-                assert updated_token is not None
-                assert updated_token.access_token == "new_access_token"
-                assert updated_token.private_key == original_private_key
+                assert updated_token is not None, "Token not found in database"
+                assert updated_token.access_token == "new_access_token"  # type: ignore[union-attr]
+                assert updated_token.private_key == original_private_key  # type: ignore[union-attr]
 
     finally:
         # Clean up the database

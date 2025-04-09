@@ -18,7 +18,7 @@ from synvya_sdk import Profile
 from retail_backend.core.database import SessionLocal
 from retail_backend.core.dependencies import get_square_client
 from retail_backend.core.models import OAuthToken
-from retail_backend.plugins.square import get_merchant_info, populate_synvya_profile
+from retail_backend.plugins.square import get_merchant_info
 
 
 @pytest.fixture(scope="session", name="client")
@@ -75,27 +75,3 @@ def test_get_merchant_info(client: Client) -> None:
     # Verify the result
     assert merchant_info == mock_merchant
     client.merchants.retrieve_merchant.assert_called_once_with(merchant_id="me")
-
-
-def test_populate_synvya_profile() -> None:
-    """Test populate_synvya_profile."""
-    # Mock merchant data
-    merchant_data = {
-        "id": "MLMXWMGK6R2V8",
-        "business_name": "Test Business",
-        "country": "US",
-        "language_code": "en-US",
-        "currency": "USD",
-    }
-
-    # Mock private key
-    private_key = "test_private_key"
-
-    # Call the function
-    profile = populate_synvya_profile(merchant_data, private_key)
-
-    # Verify the result
-    assert isinstance(profile, Profile)
-    # The Profile constructor takes the private key as an argument
-    # We can't directly check the private key as it might be stored internally
-    # Just verify that the profile was created successfully

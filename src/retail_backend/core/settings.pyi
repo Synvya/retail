@@ -34,15 +34,15 @@ class SquareSettings(BaseSettings):
     jwt_algorithm: str = "HS256"
     jwt_access_token_expire_minutes: int = 30
 
-class ShopifySettings:
+class ShopifySettings(BaseSettings):
     """
     Settings for the Shopify API.
     """
 
-    api_key: str
-    api_secret: str
-    access_token: str
-    environment: str
-    redirect_uri: str
+    api_key: str = ""
+    api_secret: str = ""
+    access_token: str = ""
+    environment: str = "development"
+    redirect_uri: str = "http://localhost:8000/shopify/oauth/callback"
 
 def get_settings(provider: Provider) -> SquareSettings | ShopifySettings: ...

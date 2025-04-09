@@ -3,21 +3,23 @@ FastAPI dependencies for the retail application.
 """
 
 from functools import lru_cache
+from typing import Union
 
-from pydantic_settings import BaseSettings
-from square.client import Client  # type: ignore
-from square.http.auth.o_auth_2 import BearerAuthCredentials  # type: ignore
+from square.client import Client
+from square.http.auth.o_auth_2 import BearerAuthCredentials
 
 from .settings import Provider, ShopifySettings, SquareSettings
 
 
 @lru_cache()
-def get_settings(provider: Provider) -> BaseSettings:
+def get_settings(provider: Provider) -> Union[ShopifySettings, SquareSettings]:
     """
     Get the settings for the retail application.
     """
     if provider == Provider.SHOPIFY:
-        return ShopifySettings()  # Reads Shopify-related vars from .env
+        return ShopifySettings(
+            api_key="", api_secret="", access_token=""
+        )  # Reads Shopify-related vars from .env
     elif provider == Provider.SQUARE:
         return SquareSettings()  # Reads Square-related vars from .env
     else:
