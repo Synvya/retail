@@ -7,3 +7,5 @@ requests
 squareup
 synvya_sdk
 pytest
+python-jose[cryptography]
+types-python-jose
