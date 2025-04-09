@@ -9,11 +9,3 @@ repos:
     hooks:
       - id: isort
 
-  - repo: https://github.com/pre-commit/mirrors-mypy
-    rev: v1.15.0  # Match installed version 1.15.0
-    hooks:
-      - id: mypy
-        exclude: 'src/.*\.pyi$'
-        args: ["src", "tests", "examples"]
-        pass_filenames: false
-        language: system

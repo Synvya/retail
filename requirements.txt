@@ -5,7 +5,8 @@ psycopg2-binary
 python-dotenv
 requests
 squareup
-synvya_sdk
+synvya-sdk==0.2.1
 pytest
 python-jose[cryptography]
 types-python-jose
+boto3
