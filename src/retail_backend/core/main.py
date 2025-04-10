@@ -1,11 +1,14 @@
 """Main FastAPI application."""
 
 import os
+from contextlib import asynccontextmanager
+from typing import AsyncGenerator
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from retail_backend.api.v1 import auth
+from retail_backend.core.database import Base, engine
 from retail_backend.core.dependencies import (
     get_settings,
     get_square_api_url,
@@ -15,11 +18,23 @@ from retail_backend.core.dependencies import (
 from retail_backend.core.settings import Provider, SquareSettings
 from retail_backend.plugins.square import create_square_router
 
+
+@asynccontextmanager
+async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
+    """Lifespan for the FastAPI application."""
+    print("Initializing database...")
+    Base.metadata.create_all(bind=engine)
+    print("Database initialized successfully!")
+    yield
+    # Cleanup actions go here (if needed)
+
+
 app = FastAPI(
     title="Retail API",
     description="API for retail integrations",
     version="1.0.0",
 )
+
 
 # Configure CORS
 app.add_middleware(
