@@ -97,3 +97,11 @@ app.include_router(auth.router, prefix="/api/v1")
 async def root() -> dict:
     """Root endpoint."""
     return {"message": "Welcome to the Retail API"}
+
+
+@app.middleware("http")
+async def log_raw_request(request: Request, call_next: Callable) -> Any:
+    body = await request.body()
+    logger.info(f"Raw request body: {body!r}")
+    response = await call_next(request)
+    return response
