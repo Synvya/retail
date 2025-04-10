@@ -2,14 +2,22 @@
 Settings for the retail application.
 """
 
+import os
 from enum import Enum
 
+from dotenv import load_dotenv
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 SQUARE_VERSION = "2025-03-19"
 SQUARE_BASE_URL_SANDBOX = "https://connect.squareupsandbox.com"
 SQUARE_BASE_URL_PRODUCTION = "https://connect.squareup.com"
-SQUARE_OAUTH_REDIRECT_URI = "http://localhost:8000/square/oauth/callback"
+
+load_dotenv()
+
+
+SQUARE_OAUTH_REDIRECT_URI = os.getenv(
+    "SQUARE_REDIRECT_URI", "http://localhost:8000/square/oauth/callback"
+)
 
 
 class Provider(Enum):
