@@ -53,6 +53,7 @@ async def get_nostr_profile(private_key: str) -> MerchantProfile:
                 "namespace",
                 "nip05",
                 "picture",
+                "public_key",
                 "website",
             ]
             for field in string_fields:
