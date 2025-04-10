@@ -1,11 +1,13 @@
 """Main FastAPI application."""
 
+import logging
 import os
 from contextlib import asynccontextmanager
-from typing import AsyncGenerator
+from typing import Any, AsyncGenerator, Callable
 
-from fastapi import FastAPI
+from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
+from starlette.middleware.base import BaseHTTPMiddleware
 
 from retail_backend.api.v1 import auth
 from retail_backend.core.database import Base, engine
@@ -17,6 +19,27 @@ from retail_backend.core.dependencies import (
 )
 from retail_backend.core.settings import Provider, SquareSettings
 from retail_backend.plugins.square import create_square_router
+
+# Setup logging
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger("api")
+
+
+# Request tracing middleware
+class RequestTracingMiddleware(BaseHTTPMiddleware):
+    """Request tracing middleware."""
+
+    async def dispatch(self, request: Request, call_next: Callable) -> Any:
+        # Log the incoming request
+        logger.info(f"Request: {request.method} {request.url}")
+        logger.info(f"Headers: {dict(request.headers)}")
+
+        # Process the request
+        response = await call_next(request)
+
+        # Log the response
+        logger.info(f"Response status: {response.status_code}")
+        return response
 
 
 @asynccontextmanager
@@ -35,6 +58,8 @@ app = FastAPI(
     version="1.0.0",
 )
 
+# Add request tracing middleware
+app.add_middleware(RequestTracingMiddleware)
 
 # Configure CORS
 app.add_middleware(
