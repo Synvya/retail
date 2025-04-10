@@ -1,10 +1,8 @@
 """Database module."""
 
-import json
 import os
 from typing import Any, cast
 
-import boto3  # type: ignore
 from dotenv import load_dotenv
 from sqlalchemy import create_engine, text
 from sqlalchemy.engine import Engine
