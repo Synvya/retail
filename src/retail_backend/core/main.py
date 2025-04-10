@@ -56,6 +56,7 @@ app = FastAPI(
     title="Retail API",
     description="API for retail integrations",
     version="1.0.0",
+    lifespan=lifespan,
 )
 
 # Add request tracing middleware
