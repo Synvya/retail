@@ -34,11 +34,11 @@ class SquareSettings(BaseSettings):
     Settings for the Square API.
     """
 
-    app_id: str = ""
-    app_secret: str = ""
+    square_app_id: str = ""
+    square_app_secret: str = ""
     environment: str = "sandbox"
-    access_token: str = ""
-    redirect_uri: str = SQUARE_OAUTH_REDIRECT_URI
+    developer_access_token: str = ""
+    square_redirect_uri: str = ""
     jwt_secret_key: str = ""
     jwt_algorithm: str = "HS256"
     jwt_access_token_expire_minutes: int = 30
@@ -46,9 +46,24 @@ class SquareSettings(BaseSettings):
     model_config = SettingsConfigDict(
         env_file=".env",
         env_file_encoding="utf-8",
-        env_prefix="SQUARE_",
+        # env_prefix="SQUARE_",
         extra="ignore",
     )
+
+    @property
+    def app_id(self) -> str:
+        """Backward compatibility for app_id."""
+        return self.square_app_id
+
+    @property
+    def app_secret(self) -> str:
+        """Backward compatibility for app_secret."""
+        return self.square_app_secret
+
+    @property
+    def access_token(self) -> str:
+        """Backward compatibility for access_token."""
+        return self.developer_access_token
 
 
 class ShopifySettings(BaseSettings):

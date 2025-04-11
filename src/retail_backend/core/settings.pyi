@@ -25,14 +25,21 @@ class SquareSettings(BaseSettings):
     Settings for the Square API.
     """
 
-    app_id: str = ""
-    app_secret: str = ""
+    square_app_id: str = ""
+    square_app_secret: str = ""
     environment: str = "sandbox"
-    access_token: str = ""
-    redirect_uri: str = SQUARE_OAUTH_REDIRECT_URI
+    developer_access_token: str = ""
+    square_redirect_uri: str = ""
     jwt_secret_key: str = ""
     jwt_algorithm: str = "HS256"
     jwt_access_token_expire_minutes: int = 30
+
+    @property
+    def app_id(self) -> str: ...
+    @property
+    def app_secret(self) -> str: ...
+    @property
+    def access_token(self) -> str: ...
 
 class ShopifySettings(BaseSettings):
     """

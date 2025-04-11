@@ -17,7 +17,7 @@ from synvya_sdk import Profile
 
 from retail_backend.core.database import SessionLocal
 from retail_backend.core.dependencies import get_square_client
-from retail_backend.core.models import OAuthToken
+from retail_backend.core.models import SquareMerchantCredentials
 from retail_backend.plugins.square import get_merchant_info
 
 
@@ -41,9 +41,9 @@ def retrieve_oauth_token() -> tuple[str, str]:
     """
     db: Session = SessionLocal()
     try:
-        token_entry = db.query(OAuthToken).filter_by(environment="sandbox").first()
+        token_entry = db.query(SquareMerchantCredentials).filter_by(environment="sandbox").first()
         if token_entry:
-            return str(token_entry.access_token), str(token_entry.environment)
+            return str(token_entry.square_merchant_token), str(token_entry.environment)
         else:
             raise RuntimeError("OAuth token not found in the database.")
     finally:

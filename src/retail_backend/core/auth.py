@@ -22,12 +22,14 @@ class TokenData(BaseModel):
 
 
 def create_access_token(merchant_id: str) -> str:
-    """Create a new JWT access token."""
+    """Create a new JWT access token for frontend authentication."""
     settings = cast(SquareSettings, get_settings(Provider.SQUARE))
     expire = datetime.now(UTC) + timedelta(minutes=settings.jwt_access_token_expire_minutes)
     to_encode = {"merchant_id": merchant_id, "exp": expire}
-    encoded_jwt = jwt.encode(to_encode, settings.jwt_secret_key, algorithm=settings.jwt_algorithm)
-    return encoded_jwt
+    frontend_auth_token = jwt.encode(
+        to_encode, settings.jwt_secret_key, algorithm=settings.jwt_algorithm
+    )
+    return frontend_auth_token
 
 
 def get_current_merchant(
@@ -63,5 +65,5 @@ def get_current_merchant(
             raise credentials_exception
 
         return token_data
-    except JWTError:
-        raise credentials_exception
+    except JWTError as e:
+        raise credentials_exception from e

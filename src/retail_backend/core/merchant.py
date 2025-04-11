@@ -5,7 +5,7 @@ import logging
 
 import anyio
 from fastapi import HTTPException
-from synvya_sdk import NostrClient, NostrKeys, Profile, ProfileType
+from synvya_sdk import NostrClient, NostrKeys, Profile, ProfileType, Stall
 
 from retail_backend.core.models import MerchantProfile
 
@@ -35,7 +35,7 @@ async def get_nostr_profile(private_key: str) -> MerchantProfile:
         client = None
         try:
             # Add validation for private key format
-            logger.info(f"Creating NostrClient with relay: {DEFAULT_RELAY}")
+            logger.info("Creating NostrClient with relay: %s", DEFAULT_RELAY)
             client = NostrClient(DEFAULT_RELAY, private_key=private_key)
             logger.info("Getting profile from NostrClient")
             profile = client.get_profile()
@@ -43,7 +43,7 @@ async def get_nostr_profile(private_key: str) -> MerchantProfile:
 
             # Convert the profile to JSON and then to our MerchantProfile model
             profile_data = json.loads(profile.to_json())
-            logger.debug(f"Profile data: {profile_data}")
+            logger.debug("Profile data: %s.", profile_data)
 
             # Ensure all string fields have valid string values (not None)
             string_fields = [
@@ -67,15 +67,20 @@ async def get_nostr_profile(private_key: str) -> MerchantProfile:
                 profile_data["locations"] = []
 
             logger.info(
-                f"Converted Nostr profile to MerchantProfile model. Name: {profile_data.get('name', 'N/A')}"
+                "Converted Nostr profile to MerchantProfile model. Name: %s.",
+                profile_data.get("name", "N/A"),
             )
             return MerchantProfile(**profile_data)
         except RuntimeError as e:
-            logger.error(f"get_nostr_profile - Error: {type(e).__name__}: {str(e)}")
-            raise HTTPException(status_code=400, detail=str(e))
+            logger.error("get_nostr_profile - Error: %s: %s.", type(e).__name__, str(e))
+            raise HTTPException(status_code=400, detail=str(e)) from e
         except Exception as e:
-            logger.error(f"get_nostr_profile - Unexpected error: {type(e).__name__}: {str(e)}")
-            raise HTTPException(status_code=500, detail=f"Server error: {str(e)}")
+            logger.error(
+                "get_nostr_profile - Unexpected Error: %s: %s.",
+                type(e).__name__,
+                str(e),
+            )
+            raise HTTPException(status_code=500, detail=f"Server error: {str(e)}") from e
         finally:
             if client:
                 logger.info("Cleaning up NostrClient")
@@ -98,20 +103,20 @@ async def set_nostr_profile(profile: MerchantProfile, private_key: str) -> None:
     Raises:
         ValueError: If the Nostr Profile data is invalid
     """
-    logger.info(f"Setting Nostr profile for {profile.name}")
+    logger.info("Setting Nostr profile for %s.", profile.name)
 
     # Use anyio.to_thread.run_sync to run NostrClient in a separate thread
     def create_client_and_set_profile() -> None:
         client = None
         try:
             # Create a NostrClient
-            logger.info(f"Creating NostrClient with relay: {DEFAULT_RELAY}")
+            logger.info("Creating NostrClient with relay: %s.", DEFAULT_RELAY)
             client = NostrClient(DEFAULT_RELAY, private_key=private_key)
 
             # Derive public key from private key
             logger.info("Deriving public key from private key")
             public_key = NostrKeys.derive_public_key(private_key)
-            logger.info(f"Derived public key (first 8 chars): {public_key[:8]}...")
+            logger.info("Derived public key (first 8 chars): %s...", public_key[:8])
 
             # Create a synvya_sdk Profile instance from MerchantProfile
             logger.info("Creating SDK Profile from MerchantProfile")
@@ -129,12 +134,13 @@ async def set_nostr_profile(profile: MerchantProfile, private_key: str) -> None:
 
             # Convert string profile_type to ProfileType enum
             try:
-                logger.info(f"Converting profile_type: {profile.profile_type}")
+                logger.info("Converting profile_type: %s.", profile.profile_type)
                 profile_type_enum = ProfileType(profile.profile_type)
             except ValueError:
                 # Default to OTHER_OTHER if conversion fails
                 logger.warning(
-                    f"Invalid profile_type: {profile.profile_type}. Defaulting to OTHER_OTHER"
+                    "Invalid profile_type: %s. Defaulting to OTHER_OTHER",
+                    profile.profile_type,
                 )
                 profile_type_enum = ProfileType.OTHER_OTHER
 
@@ -150,7 +156,7 @@ async def set_nostr_profile(profile: MerchantProfile, private_key: str) -> None:
                 sdk_profile.add_location(location)
 
             # Print the profile to be published for debugging
-            logger.info(f"Publishing profile: {sdk_profile.to_json()}")
+            logger.info("Publishing profile: %s.", sdk_profile.to_json())
 
             # Set the profile using the SDK
             logger.info("Setting profile using NostrClient")
@@ -158,11 +164,11 @@ async def set_nostr_profile(profile: MerchantProfile, private_key: str) -> None:
             logger.info("Successfully published profile to Nostr")
 
         except (RuntimeError, ValueError) as e:
-            logger.error(f"Error setting profile: {type(e).__name__}: {str(e)}")
-            raise HTTPException(status_code=400, detail=str(e))
+            logger.error("Error setting profile: %s: %s.", type(e).__name__, str(e))
+            raise HTTPException(status_code=400, detail=str(e)) from e
         except Exception as e:
-            logger.error(f"Unexpected error: {type(e).__name__}: {str(e)}")
-            raise HTTPException(status_code=500, detail=f"Server error: {str(e)}")
+            logger.error("Unexpected error: %s: %s.", type(e).__name__, str(e))
+            raise HTTPException(status_code=500, detail=f"Server error: {str(e)}") from e
         finally:
             if client:
                 logger.info("Cleaning up NostrClient")
@@ -171,3 +177,45 @@ async def set_nostr_profile(profile: MerchantProfile, private_key: str) -> None:
     # Run the blocking code in a separate thread
     logger.info("Running NostrClient in a separate thread")
     await anyio.to_thread.run_sync(create_client_and_set_profile)
+
+
+async def set_nostr_stall(stall: Stall, private_key: str) -> None:
+    """
+    Asynchronously publishes the Nostr Stall to the Nostr relay
+
+    Args:
+        stall (Stall): Pydantic model with Nostr Stall data.
+        private_key (str): Merchant Nostr private key.
+
+    Raises:
+        HTTPException: If the Nostr Stall publishing fails
+    """
+    await anyio.to_thread.run_sync(_set_nostr_stall, stall, private_key)
+
+
+def _set_nostr_stall(stall: Stall, private_key: str) -> None:
+    """
+    Internal function to publish the Nostr Stall to the Nostr relay
+
+    Args:
+        stall (Stall): Pydantic model with Nostr Stall data.
+        private_key (str): Merchant Nostr private key.
+
+    Raises:
+        HTTPException: If the Nostr Stall publishing fails
+    """
+    logger.info("Setting Nostr stall for %s.", stall.name)
+
+    client = None
+    try:
+        # Create a NostrClient
+        client = NostrClient(DEFAULT_RELAY, private_key=private_key)
+
+        client.set_stall(stall)
+        logger.info("Successfully published stall to Nostr")
+    except RuntimeError as e:
+        logger.error("Error publishing stall to Nostr: %s", e)
+        raise HTTPException(status_code=500, detail=f"Server error: {str(e)}") from e
+    finally:
+        if client:
+            del client

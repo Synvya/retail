@@ -11,12 +11,7 @@ from starlette.middleware.base import BaseHTTPMiddleware
 
 from retail_backend.api.v1 import auth
 from retail_backend.core.database import Base, engine
-from retail_backend.core.dependencies import (
-    get_settings,
-    get_square_api_url,
-    get_square_base_url,
-    get_square_client,
-)
+from retail_backend.core.dependencies import get_settings, get_square_base_url, get_square_client
 from retail_backend.core.settings import Provider, SquareSettings
 from retail_backend.plugins.square import create_square_router
 
@@ -31,19 +26,19 @@ class RequestTracingMiddleware(BaseHTTPMiddleware):
 
     async def dispatch(self, request: Request, call_next: Callable) -> Any:
         # Log the incoming request
-        logger.info(f"Request: {request.method} {request.url}")
-        logger.info(f"Headers: {dict(request.headers)}")
+        logger.info("Request: %s %s", request.method, request.url)
+        logger.info("Headers: %s", dict(request.headers))
 
         # Process the request
         response = await call_next(request)
 
         # Log the response
-        logger.info(f"Response status: {response.status_code}")
+        logger.info("Response status: %s", response.status_code)
         return response
 
 
 @asynccontextmanager
-async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
+async def lifespan(app_instance: FastAPI) -> AsyncGenerator[None, None]:
     """Lifespan for the FastAPI application."""
     print("Initializing database...")
     Base.metadata.create_all(bind=engine)
@@ -86,9 +81,8 @@ if payment_provider == "square":
         raise ValueError("Settings are not of type SquareSettings")
     client = get_square_client()
     square_base_url = get_square_base_url()
-    square_api_url = get_square_api_url()
     app.include_router(
-        create_square_router(client, settings, square_base_url, square_api_url),
+        create_square_router(client, settings, square_base_url),
         prefix="/square",
     )
 # elif payment_provider == "shopify":
@@ -106,7 +100,8 @@ async def root() -> dict:
 
 @app.middleware("http")
 async def log_raw_request(request: Request, call_next: Callable) -> Any:
+    """Log the raw request body."""
     body = await request.body()
-    logger.info(f"Raw request body: {body!r}")
+    logger.info("Raw request body: %s", body)
     response = await call_next(request)
     return response

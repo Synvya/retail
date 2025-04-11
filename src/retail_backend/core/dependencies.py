@@ -36,7 +36,7 @@ def get_square_client() -> Client:
         raise ValueError("Settings are not of type SquareSettings")
 
     client = Client(
-        bearer_auth_credentials=BearerAuthCredentials(access_token=settings.access_token),
+        bearer_auth_credentials=BearerAuthCredentials(access_token=settings.developer_access_token),
         environment=settings.environment,
     )
     return client
@@ -58,8 +58,8 @@ def get_square_base_url() -> str:
 
     try:
         return base_urls[settings.environment]
-    except KeyError:
-        raise ValueError(f"Invalid environment: {settings.environment}")
+    except KeyError as e:
+        raise ValueError(f"Invalid environment: {settings.environment}") from e
 
 
 @lru_cache()

@@ -1,7 +1,6 @@
 """Database module."""
 
 import os
-from typing import Any, cast
 
 from dotenv import load_dotenv
 from sqlalchemy import create_engine, text

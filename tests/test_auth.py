@@ -9,7 +9,7 @@ from fastapi.security import HTTPAuthorizationCredentials
 
 from retail_backend.core.auth import TokenData, create_access_token, get_current_merchant
 from retail_backend.core.database import SessionLocal
-from retail_backend.core.models import OAuthToken
+from retail_backend.core.models import SquareMerchantCredentials
 from retail_backend.core.settings import SquareSettings
 
 
@@ -17,10 +17,10 @@ from retail_backend.core.settings import SquareSettings
 def mock_settings() -> SquareSettings:
     """Mock settings for testing."""
     return SquareSettings(
-        app_id="test_app_id",
-        app_secret="test_app_secret",
+        square_app_id="test_app_id",
+        square_app_secret="test_app_secret",
         environment="sandbox",
-        access_token="test_access_token",
+        developer_access_token="test_access_token",
         redirect_uri="http://localhost:8000/square/oauth/callback",
         jwt_secret_key="test_secret_key",
         jwt_algorithm="HS256",
@@ -82,10 +82,11 @@ def test_merchant_reuses_private_key(mock_settings: SquareSettings) -> None:
         merchant_id = "test_merchant_456"
 
         # Create an initial OAuth token entry
-        initial_token = OAuthToken(
+        initial_token = SquareMerchantCredentials(
             merchant_id=merchant_id,
-            access_token="old_access_token",
-            private_key=original_private_key,
+            square_merchant_token="old_access_token",
+            nostr_private_key=original_private_key,
+            environment="sandbox",
         )
         db.add(initial_token)
         db.commit()
@@ -151,18 +152,20 @@ def test_merchant_reuses_private_key(mock_settings: SquareSettings) -> None:
                 # Import the module to trigger the router creation
 
                 # Manually update the database to simulate what the oauth_callback would do
-                token = db.query(OAuthToken).filter_by(merchant_id=merchant_id).first()  # type: ignore[union-attr]
-                token.access_token = "new_access_token"  # type: ignore[union-attr]
+                token = db.query(SquareMerchantCredentials).filter_by(merchant_id=merchant_id).first()  # type: ignore[union-attr]
+                token.square_merchant_token = "new_access_token"  # type: ignore[union-attr]
                 db.commit()
 
                 # Verify the database was updated correctly
-                updated_token = db.query(OAuthToken).filter_by(merchant_id=merchant_id).first()
+                updated_token = (
+                    db.query(SquareMerchantCredentials).filter_by(merchant_id=merchant_id).first()
+                )
                 assert updated_token is not None, "Token not found in database"
-                assert updated_token.access_token == "new_access_token"  # type: ignore[union-attr]
-                assert updated_token.private_key == original_private_key  # type: ignore[union-attr]
+                assert updated_token.square_merchant_token == "new_access_token"  # type: ignore[union-attr]
+                assert updated_token.nostr_private_key == original_private_key  # type: ignore[union-attr]
 
     finally:
         # Clean up the database
-        db.query(OAuthToken).filter_by(merchant_id=merchant_id).delete()
+        db.query(SquareMerchantCredentials).filter_by(merchant_id=merchant_id).delete()
         db.commit()
         db.close()
