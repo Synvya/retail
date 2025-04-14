@@ -234,7 +234,7 @@ def _set_nostr_stall_square(location: dict, private_key: str) -> bool:
                 ssm_id=location["id"],
                 ssm_cost=0.0,
                 ssm_name=location["name"],
-                ssm_regions=location["address"]["country"],
+                ssm_regions=[location["address"]["country"]],
             )
         ],
         geohash=None,  # future to convert lat, long to geohash
