@@ -138,7 +138,7 @@ async def set_nostr_profile(profile: MerchantProfile, private_key: str) -> None:
             sdk_profile.set_picture(profile.picture)
 
             if profile.nip05 == "":
-                logger.warning("NIP-05 is empty. Setting to %s", profile.name + "@synvya.com")
+                logger.info("NIP-05 is empty. Setting to %s", profile.name + "@synvya.com")
                 profile.nip05 = profile.name + "@synvya.com"
             logger.info("_set_nostr_profile: NIP-05: %s", profile.nip05)
             sdk_profile.set_nip05(profile.nip05)
