@@ -32,7 +32,7 @@ async def get_nostr_profile(private_key: str) -> MerchantProfile:
     logger.debug("Getting Nostr profile...")
 
     # Use anyio.to_thread.run_sync to run NostrClient in a separate thread
-    def create_client_and_get_profile() -> MerchantProfile:
+    def _get_nostr_profile() -> MerchantProfile:
         client = None
         try:
             # Add validation for private key format
@@ -64,23 +64,25 @@ async def get_nostr_profile(private_key: str) -> MerchantProfile:
             if "nip05" in profile_data and profile_data["nip05"] is None:
                 profile_data["nip05"] = profile_data["name"] + "@synvya.com"
 
+            logger.debug("_get_nostr_profile: NIP05: %s", profile_data["nip05"])
+
             # Ensure hashtags and locations are lists, not None
             if "hashtags" in profile_data and profile_data["hashtags"] is None:
                 profile_data["hashtags"] = []
             if "locations" in profile_data and profile_data["locations"] is None:
                 profile_data["locations"] = []
 
-            logger.info(
+            logger.debug(
                 "Converted Nostr profile to MerchantProfile model. Name: %s.",
                 profile_data.get("name", "N/A"),
             )
             return MerchantProfile(**profile_data)
         except RuntimeError as e:
-            logger.error("get_nostr_profile - Error: %s: %s.", type(e).__name__, str(e))
+            logger.error("_get_nostr_profile - Error: %s: %s.", type(e).__name__, str(e))
             raise HTTPException(status_code=400, detail=str(e)) from e
         except Exception as e:
             logger.error(
-                "get_nostr_profile - Unexpected Error: %s: %s.",
+                "_get_nostr_profile - Unexpected Error: %s: %s.",
                 type(e).__name__,
                 str(e),
             )
@@ -92,7 +94,7 @@ async def get_nostr_profile(private_key: str) -> MerchantProfile:
 
     # Run the blocking code in a separate thread
     logger.debug("Running NostrClient in a separate thread")
-    return await anyio.to_thread.run_sync(create_client_and_get_profile)
+    return await anyio.to_thread.run_sync(_get_nostr_profile)
 
 
 async def set_nostr_profile(profile: MerchantProfile, private_key: str) -> None:
@@ -110,7 +112,7 @@ async def set_nostr_profile(profile: MerchantProfile, private_key: str) -> None:
     logger.debug("Setting Nostr profile for %s.", profile.name)
 
     # Use anyio.to_thread.run_sync to run NostrClient in a separate thread
-    def create_client_and_set_profile() -> None:
+    def _set_nostr_profile() -> None:
         client = None
         try:
             # Create a NostrClient
@@ -136,6 +138,8 @@ async def set_nostr_profile(profile: MerchantProfile, private_key: str) -> None:
             sdk_profile.set_nip05(profile.nip05)
             sdk_profile.set_picture(profile.picture)
 
+            logger.debug("_set_nostr_profile: NIP-05: %s", profile.nip05)
+
             # Convert string profile_type to ProfileType enum
             try:
                 logger.debug("Converting profile_type: %s.", profile.profile_type)
@@ -160,12 +164,12 @@ async def set_nostr_profile(profile: MerchantProfile, private_key: str) -> None:
                 sdk_profile.add_location(location)
 
             # Print the profile to be published for debugging
-            logger.info("Publishing profile: %s.", sdk_profile.to_json())
+            logger.debug("Publishing profile: %s.", sdk_profile.to_json())
 
             # Set the profile using the SDK
-            logger.info("Setting profile using NostrClient")
+            logger.debug("Setting profile using NostrClient")
             client.set_profile(sdk_profile)
-            logger.info("Successfully published profile to Nostr")
+            logger.debug("Successfully published profile to Nostr")
 
         except (RuntimeError, ValueError) as e:
             logger.error("Error setting profile: %s: %s.", type(e).__name__, str(e))
@@ -175,12 +179,12 @@ async def set_nostr_profile(profile: MerchantProfile, private_key: str) -> None:
             raise HTTPException(status_code=500, detail=f"Server error: {str(e)}") from e
         finally:
             if client:
-                logger.info("Cleaning up NostrClient")
+                logger.debug("Cleaning up NostrClient")
                 del client
 
     # Run the blocking code in a separate thread
-    logger.info("Running NostrClient in a separate thread")
-    await anyio.to_thread.run_sync(create_client_and_set_profile)
+    logger.debug("Running NostrClient in a separate thread")
+    await anyio.to_thread.run_sync(_set_nostr_profile)
 
 
 async def set_nostr_stall(provider: Provider, location: dict, private_key: str) -> bool:
