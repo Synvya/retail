@@ -87,7 +87,7 @@ def create_square_router(
             f"response_type=code&"
             f"state={state}"
         )
-        print(f"OAuth URL: {oauth_url}")
+        logger.info("OAuth received. Redirecting to: %s", oauth_url)
         return RedirectResponse(oauth_url)
 
     @router.get("/oauth/callback")
@@ -212,6 +212,7 @@ def create_square_router(
         square_credentials: SquareMerchantCredentials = Depends(get_square_credentials),
     ) -> dict:
         """Get merchant information."""
+        logger.info("GET /seller/info received for merchant: %s", square_credentials.merchant_id)
         # Create a new client with the merchant's access token
         merchant_client = Client(
             access_token=square_credentials.square_merchant_token,
@@ -243,7 +244,7 @@ def create_square_router(
         db: Session = Depends(get_db),
     ) -> MerchantProfile:
         """Get merchant's Nostr profile."""
-        logger.info("Getting profile for merchant: %s", current_merchant.merchant_id)
+        logger.info("GET /pprofile received for merchant: %s", current_merchant.merchant_id)
 
         # Get the merchant's credentials from the database
         try:
@@ -292,7 +293,7 @@ def create_square_router(
         Returns:
             dict: A message indicating success or an error message
         """
-        logger.info("Publishing profile for merchant: %s", current_merchant.merchant_id)
+        logger.info("POST /profile/publish received for merchant: %s", current_merchant.merchant_id)
         logger.info(
             "Profile data: name=%s, display_name=%s",
             profile_request.name,
@@ -345,7 +346,9 @@ def create_square_router(
         db: Session = Depends(get_db),
     ) -> dict:
         """Publish merchant's locations as Nostr Stalls."""
-        logger.info("Publishing locations for merchant: %s", current_merchant.merchant_id)
+        logger.info(
+            "POST /locations/publish received for merchant: %s", current_merchant.merchant_id
+        )
 
         # Get the merchant's credentials from the database
         try:
