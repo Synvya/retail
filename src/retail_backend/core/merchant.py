@@ -237,7 +237,7 @@ def _set_nostr_stall_square(location: dict, private_key: str) -> bool:
                 ssm_regions=[location["address"]["country"]],
             )
         ],
-        geohash=None,  # future to convert lat, long to geohash
+        geohash="",  # future to convert lat, long to geohash
     )
     try:
         # Create a NostrClient
