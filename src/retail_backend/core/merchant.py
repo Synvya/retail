@@ -5,9 +5,10 @@ import logging
 
 import anyio
 from fastapi import HTTPException
-from synvya_sdk import NostrClient, NostrKeys, Profile, ProfileType, Stall
+from synvya_sdk import NostrClient, NostrKeys, Profile, ProfileType, Stall, StallShippingMethod
 
 from retail_backend.core.models import MerchantProfile
+from retail_backend.core.settings import Provider
 
 # Setup module-level logger
 logger = logging.getLogger("merchant")
@@ -179,43 +180,64 @@ async def set_nostr_profile(profile: MerchantProfile, private_key: str) -> None:
     await anyio.to_thread.run_sync(create_client_and_set_profile)
 
 
-async def set_nostr_stall(stall: Stall, private_key: str) -> None:
+async def set_nostr_stall(provider: Provider, location: dict, private_key: str) -> bool:
     """
     Asynchronously publishes the Nostr Stall to the Nostr relay
 
     Args:
-        stall (Stall): Pydantic model with Nostr Stall data.
+        provider (Provider): Provider of the location ("square" or "shopify")
+        location (dict): Location data
         private_key (str): Merchant Nostr private key.
 
-    Raises:
-        HTTPException: If the Nostr Stall publishing fails
+    Returns:
+        bool: True if the Nostr Stall was published successfully, False otherwise.
     """
-    await anyio.to_thread.run_sync(_set_nostr_stall, stall, private_key)
+
+    return await anyio.to_thread.run_sync(_set_nostr_stall_square, location, private_key)
 
 
-def _set_nostr_stall(stall: Stall, private_key: str) -> None:
+def _set_nostr_stall_square(location: dict, private_key: str) -> bool:
     """
     Internal function to publish the Nostr Stall to the Nostr relay
+
+    TBD: use lat lot to set geohash field of Stall model
 
     Args:
         stall (Stall): Pydantic model with Nostr Stall data.
         private_key (str): Merchant Nostr private key.
 
-    Raises:
-        HTTPException: If the Nostr Stall publishing fails
+    Returns:
+        bool: True if the Nostr Stall was published successfully, False otherwise.
     """
-    logger.info("Setting Nostr stall for %s.", stall.name)
 
-    client = None
+    logger.info("Publishing Nostr stall for %s.", location["name"])
+
+    stall = Stall(
+        id=location["id"],
+        name=location["name"],
+        description=location["description"],
+        currency=location["currency"],
+        shipping=[
+            StallShippingMethod(
+                ssm_id=location["id"],
+                ssm_cost=0.0,
+                ssm_name=location["name"],
+                ssm_regions=location["address"]["country"],
+            )
+        ],
+        geohash=None,  # future to convert lat, long to geohash
+    )
     try:
         # Create a NostrClient
         client = NostrClient(DEFAULT_RELAY, private_key=private_key)
 
         client.set_stall(stall)
         logger.info("Successfully published stall to Nostr")
+        return True
     except RuntimeError as e:
         logger.error("Error publishing stall to Nostr: %s", e)
-        raise HTTPException(status_code=500, detail=f"Server error: {str(e)}") from e
+        # raise HTTPException(status_code=500, detail=f"Server error: {str(e)}") from e
+        return False
     finally:
         if client:
             del client

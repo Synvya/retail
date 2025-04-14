@@ -23,9 +23,9 @@ from synvya_sdk import generate_keys
 
 from retail_backend.core.auth import TokenData, create_access_token, get_current_merchant
 from retail_backend.core.database import SessionLocal
-from retail_backend.core.merchant import get_nostr_profile, set_nostr_profile
+from retail_backend.core.merchant import get_nostr_profile, set_nostr_profile, set_nostr_stall
 from retail_backend.core.models import MerchantProfile, SquareMerchantCredentials
-from retail_backend.core.settings import SquareSettings
+from retail_backend.core.settings import Provider, SquareSettings
 
 # Setup module-level logger
 logger = logging.getLogger("square")
@@ -150,6 +150,8 @@ def create_square_router(
             existing_credentials.square_merchant_token = access_token
             db.commit()
             private_key = existing_credentials.nostr_private_key
+            if private_key is None:
+                raise HTTPException(status_code=400, detail="Private key not found for merchant")
         else:
             # Generate a new private key only for new merchants
             logger.info("Creating new merchant: %s", merchant_id)
@@ -177,9 +179,6 @@ def create_square_router(
                 profile_published = True
             except Exception as e:
                 logger.error("Error publishing profile (continuing OAuth flow): %s", str(e))
-
-        # publish product catalog
-        # TBD
 
         # Generate JWT token
         logger.info("Generating JWT token")
@@ -337,6 +336,57 @@ def create_square_router(
                 status_code=500,
                 detail=f"Server error publishing profile: {str(e)}",
             ) from e
+
+    @router.post("/locations/publish", response_model=dict)
+    async def publish_locations(
+        current_merchant: TokenData = Depends(get_current_merchant),
+        db: Session = Depends(get_db),
+    ) -> dict:
+        """Publish merchant's locations as Nostr Stalls."""
+        logger.info("Publishing locations for merchant: %s", current_merchant.merchant_id)
+
+        # Get the merchant's credentials from the database
+        try:
+            square_credentials = get_square_credentials(current_merchant, db)
+            logger.info("Retrieved merchant credentials from database")
+        except HTTPException as e:
+            logger.error("Error retrieving credentials: %s", str(e))
+            raise
+
+        if not square_credentials.nostr_private_key:
+            logger.error("Private key not found for merchant")
+            return {"message": "Failed to publish locations: Private key not found for merchant"}
+
+        private_key = square_credentials.nostr_private_key
+
+        merchant_square_client = Client(
+            access_token=square_credentials.square_merchant_token,
+            environment="sandbox",
+        )
+
+        locations_response = merchant_square_client.locations.list_locations()
+
+        if not locations_response.is_success():
+            logger.error("Error fetching locations: %s", locations_response.errors)
+            return {"message": "Failed to publish locations: Error fetching locations"}
+
+        locations = locations_response.body.get("locations", [])
+
+        locations_published = 0
+        locations_failed = 0
+
+        for location in locations:
+            logger.info("Publishing location as Nostr Stall: %s", location)
+            published = await set_nostr_stall(Provider.SQUARE, location, private_key)
+            if published:
+                locations_published += 1
+            else:
+                locations_failed += 1
+
+        return {
+            "locations_published": locations_published,
+            "locations_failed": locations_failed,
+        }
 
     return router
 
