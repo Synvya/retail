@@ -19,7 +19,7 @@ from fastapi.responses import RedirectResponse
 from sqlalchemy import and_
 from sqlalchemy.orm import Session
 from square.client import Client
-from synvya_sdk import generate_keys
+from synvya_sdk import NostrKeys, generate_keys
 
 from retail_backend.core.auth import TokenData, create_access_token, get_current_merchant
 from retail_backend.core.database import SessionLocal
@@ -181,7 +181,9 @@ def create_square_router(
                 logger.error("Error publishing profile (continuing OAuth flow): %s", str(e))
 
         # Generate JWT token
-        logger.info("Generating JWT token")
+        logger.info(
+            "Generating JWT token for public key: %s", NostrKeys.derive_public_key(private_key)
+        )
         frontend_auth_token = create_access_token(merchant_id)
 
         # Use the state parameter as the frontend callback URL or use default
