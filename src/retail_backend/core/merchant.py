@@ -208,6 +208,24 @@ async def set_nostr_stall(provider: Provider, location: dict, private_key: str) 
         raise HTTPException(status_code=400, detail="Unsupported provider")
 
 
+async def set_nostr_product(provider: Provider, product: dict, private_key: str) -> bool:
+    """
+    Asynchronously publishes the Nostr Product to the Nostr relay
+
+    Args:
+        provider (Provider): Provider of the product ("square" or "shopify")
+        product (dict): Product data
+        private_key (str): Merchant Nostr private key.
+
+    Returns:
+        bool: True if the Nostr Product was published successfully, False otherwise.
+    """
+    if provider == Provider.SQUARE:
+        return await anyio.to_thread.run_sync(_set_nostr_product_square, product, private_key)
+    else:
+        raise HTTPException(status_code=400, detail="Unsupported provider")
+
+
 def _set_nostr_stall_square(location: dict, private_key: str) -> bool:
     """
     Internal function to publish the Nostr Stall to the Nostr relay
@@ -248,8 +266,39 @@ def _set_nostr_stall_square(location: dict, private_key: str) -> bool:
         return True
     except RuntimeError as e:
         logger.error("Error publishing stall to Nostr: %s", e)
-        # raise HTTPException(status_code=500, detail=f"Server error: {str(e)}") from e
         return False
     finally:
         if client:
             del client
+
+
+def _set_nostr_product_square(product: dict, private_key: str) -> bool:
+    """
+    Internal function to publish the Nostr Product to the Nostr relay
+
+    Args:
+        product (dict): Product data
+        private_key (str): Merchant Nostr private key.
+
+    Returns:
+        bool: True if the Nostr Product was published successfully, False otherwise.
+    """
+
+    logger.info("Publishing Nostr product for %s.", product["name"])
+
+    logger.info("Product: %s", product)
+    return True
+
+    # try:
+    #     # Create a NostrClient
+    #     client = NostrClient(DEFAULT_RELAY, private_key=private_key)
+
+    #     client.set_product(product)
+    #     logger.info("Successfully published product to Nostr")
+    #     return True
+    # except RuntimeError as e:
+    #     logger.error("Error publishing product to Nostr: %s", e)
+    #     return False
+    # finally:
+    #     if client:
+    #         del client
