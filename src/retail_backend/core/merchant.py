@@ -135,11 +135,13 @@ async def set_nostr_profile(profile: MerchantProfile, private_key: str) -> None:
             sdk_profile.set_bot(profile.bot)
             sdk_profile.set_display_name(profile.display_name)
             sdk_profile.set_namespace(profile.namespace)
-            sdk_profile.set_nip05(profile.nip05)
             sdk_profile.set_picture(profile.picture)
 
+            if profile.nip05 == "":
+                logger.warning("NIP-05 is empty. Setting to %s", profile.name + "@synvya.com")
+                profile.nip05 = profile.name + "@synvya.com"
             logger.info("_set_nostr_profile: NIP-05: %s", profile.nip05)
-
+            sdk_profile.set_nip05(profile.nip05)
             # Convert string profile_type to ProfileType enum
             try:
                 logger.debug("Converting profile_type: %s.", profile.profile_type)
