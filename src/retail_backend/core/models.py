@@ -9,6 +9,7 @@ from pydantic import BaseModel, Field
 from sqlalchemy import DateTime, String, text
 from sqlalchemy.orm import Mapped, mapped_column
 from square.client import Client
+from synvya_sdk import ProfileType
 
 from retail_backend.core.database import Base
 
@@ -54,7 +55,7 @@ class MerchantProfile(BaseModel):
     namespace: str = Field("", description="Profile namespace")
     nip05: str = Field("", description="NIP-05 identifier")
     picture: str = Field("", description="URL to profile picture")
-    profile_type: str = Field("OTHER_OTHER", description="Profile type")
+    profile_type: ProfileType = Field(ProfileType.OTHER_OTHER, description="Profile type")
     website: str = Field("", description="Website URL")
     # Read-only fields (returned by GET but not used in POST)
     public_key: Optional[str] = Field(None, description="Public key (derived from private key)")
@@ -73,7 +74,7 @@ class MerchantProfile(BaseModel):
                 "namespace": "com.synvya.merchant",
                 "nip05": "pressedonmain@synvya.com",
                 "picture": "https://example.com/logo.png",
-                "profile_type": "restaurant",
+                "profile_type": ProfileType.MERCHANT_RESTAURANT,
                 "website": "www.pressedonmain.com",
             }
         }
@@ -137,7 +138,7 @@ class MerchantProfile(BaseModel):
         locations = []
         namespace = "com.synvya.merchant"
         picture = ""
-        profile_type = "other"
+        profile_type = ProfileType.OTHER_OTHER
 
         # Create a MerchantProfile object
         profile = MerchantProfile(

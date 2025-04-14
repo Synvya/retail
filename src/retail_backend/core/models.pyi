@@ -10,6 +10,7 @@ from pydantic import BaseModel
 from sqlalchemy import DateTime, String, text
 from sqlalchemy.orm import Mapped, mapped_column
 from square.client import Client
+from synvya_sdk import ProfileType
 
 from retail_backend.core.database import Base
 
@@ -58,7 +59,7 @@ class MerchantProfile(BaseModel):
     namespace: str
     nip05: str
     picture: str
-    profile_type: str
+    profile_type: ProfileType
     website: str
     public_key: Optional[str]
     profile_url: Optional[str]

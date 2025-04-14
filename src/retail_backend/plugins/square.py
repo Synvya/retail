@@ -244,12 +244,12 @@ def create_square_router(
         db: Session = Depends(get_db),
     ) -> MerchantProfile:
         """Get merchant's Nostr profile."""
-        logger.info("GET /pprofile received for merchant: %s", current_merchant.merchant_id)
+        logger.info("GET /profile received for merchant: %s", current_merchant.merchant_id)
 
         # Get the merchant's credentials from the database
         try:
             square_credentials = get_square_credentials(current_merchant, db)
-            logger.info("Retrieved merchant credentials from database")
+            logger.debug("Retrieved merchant credentials from database")
         except HTTPException as e:
             logger.error("Error retrieving credentials: %s", str(e))
             raise
@@ -263,9 +263,9 @@ def create_square_router(
 
         # Get the profile from Nostr
         try:
-            logger.info("Fetching profile from Nostr")
+            logger.debug("Fetching profile from Nostr")
             profile = await get_nostr_profile(square_credentials.nostr_private_key)
-            logger.info(
+            logger.debug(
                 "Successfully retrieved profile for merchant: %s", current_merchant.merchant_id
             )
             return profile

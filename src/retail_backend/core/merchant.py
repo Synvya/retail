@@ -29,18 +29,18 @@ async def get_nostr_profile(private_key: str) -> MerchantProfile:
     Raises:
         HTTPException: If the merchant Nostr Profile is not found.
     """
-    logger.info("Getting Nostr profile...")
+    logger.debug("Getting Nostr profile...")
 
     # Use anyio.to_thread.run_sync to run NostrClient in a separate thread
     def create_client_and_get_profile() -> MerchantProfile:
         client = None
         try:
             # Add validation for private key format
-            logger.info("Creating NostrClient with relay: %s", DEFAULT_RELAY)
+            logger.debug("Creating NostrClient with relay: %s", DEFAULT_RELAY)
             client = NostrClient(DEFAULT_RELAY, private_key=private_key)
-            logger.info("Getting profile from NostrClient")
+            logger.debug("Getting profile from NostrClient")
             profile = client.get_profile()
-            logger.info("Successfully retrieved profile from Nostr")
+            logger.debug("Successfully retrieved profile from Nostr")
 
             # Convert the profile to JSON and then to our MerchantProfile model
             profile_data = json.loads(profile.to_json())
@@ -52,14 +52,17 @@ async def get_nostr_profile(private_key: str) -> MerchantProfile:
                 "banner",
                 "display_name",
                 "namespace",
-                "nip05",
                 "picture",
                 "public_key",
                 "website",
             ]
+
             for field in string_fields:
                 if field in profile_data and profile_data[field] is None:
                     profile_data[field] = ""
+
+            if "nip05" in profile_data and profile_data["nip05"] is None:
+                profile_data["nip05"] = profile_data["name"] + "@synvya.com"
 
             # Ensure hashtags and locations are lists, not None
             if "hashtags" in profile_data and profile_data["hashtags"] is None:
@@ -84,11 +87,11 @@ async def get_nostr_profile(private_key: str) -> MerchantProfile:
             raise HTTPException(status_code=500, detail=f"Server error: {str(e)}") from e
         finally:
             if client:
-                logger.info("Cleaning up NostrClient")
+                logger.debug("Cleaning up NostrClient")
                 del client
 
     # Run the blocking code in a separate thread
-    logger.info("Running NostrClient in a separate thread")
+    logger.debug("Running NostrClient in a separate thread")
     return await anyio.to_thread.run_sync(create_client_and_get_profile)
 
 
@@ -104,23 +107,23 @@ async def set_nostr_profile(profile: MerchantProfile, private_key: str) -> None:
     Raises:
         ValueError: If the Nostr Profile data is invalid
     """
-    logger.info("Setting Nostr profile for %s.", profile.name)
+    logger.debug("Setting Nostr profile for %s.", profile.name)
 
     # Use anyio.to_thread.run_sync to run NostrClient in a separate thread
     def create_client_and_set_profile() -> None:
         client = None
         try:
             # Create a NostrClient
-            logger.info("Creating NostrClient with relay: %s.", DEFAULT_RELAY)
+            logger.debug("Creating NostrClient with relay: %s.", DEFAULT_RELAY)
             client = NostrClient(DEFAULT_RELAY, private_key=private_key)
 
             # Derive public key from private key
-            logger.info("Deriving public key from private key")
+            logger.debug("Deriving public key from private key")
             public_key = NostrKeys.derive_public_key(private_key)
-            logger.info("Derived public key (first 8 chars): %s...", public_key[:8])
+            logger.debug("Derived public key (first 8 chars): %s...", public_key[:8])
 
             # Create a synvya_sdk Profile instance from MerchantProfile
-            logger.info("Creating SDK Profile from MerchantProfile")
+            logger.debug("Creating SDK Profile from MerchantProfile")
             sdk_profile = Profile(public_key=public_key)
 
             # Set fields from MerchantProfile to SDK Profile
@@ -135,7 +138,7 @@ async def set_nostr_profile(profile: MerchantProfile, private_key: str) -> None:
 
             # Convert string profile_type to ProfileType enum
             try:
-                logger.info("Converting profile_type: %s.", profile.profile_type)
+                logger.debug("Converting profile_type: %s.", profile.profile_type)
                 profile_type_enum = ProfileType(profile.profile_type)
             except ValueError:
                 # Default to OTHER_OTHER if conversion fails
@@ -193,7 +196,10 @@ async def set_nostr_stall(provider: Provider, location: dict, private_key: str) 
         bool: True if the Nostr Stall was published successfully, False otherwise.
     """
 
-    return await anyio.to_thread.run_sync(_set_nostr_stall_square, location, private_key)
+    if provider == Provider.SQUARE:
+        return await anyio.to_thread.run_sync(_set_nostr_stall_square, location, private_key)
+    else:
+        raise HTTPException(status_code=400, detail="Unsupported provider")
 
 
 def _set_nostr_stall_square(location: dict, private_key: str) -> bool:
