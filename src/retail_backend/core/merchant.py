@@ -64,7 +64,7 @@ async def get_nostr_profile(private_key: str) -> MerchantProfile:
             if "nip05" in profile_data and profile_data["nip05"] is None:
                 profile_data["nip05"] = profile_data["name"] + "@synvya.com"
 
-            logger.debug("_get_nostr_profile: NIP05: %s", profile_data["nip05"])
+            logger.info("_get_nostr_profile: NIP05: %s", profile_data["nip05"])
 
             # Ensure hashtags and locations are lists, not None
             if "hashtags" in profile_data and profile_data["hashtags"] is None:
@@ -138,7 +138,7 @@ async def set_nostr_profile(profile: MerchantProfile, private_key: str) -> None:
             sdk_profile.set_nip05(profile.nip05)
             sdk_profile.set_picture(profile.picture)
 
-            logger.debug("_set_nostr_profile: NIP-05: %s", profile.nip05)
+            logger.info("_set_nostr_profile: NIP-05: %s", profile.nip05)
 
             # Convert string profile_type to ProfileType enum
             try:
