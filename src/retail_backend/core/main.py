@@ -95,7 +95,7 @@ app.include_router(auth.router, prefix="/api/v1")
 @app.get("/")
 async def root() -> dict:
     """Root endpoint."""
-    logger.info("GET / received")
+    logger.debug("GET / received")
     return {"message": "Welcome to the Retail API"}
 
 

@@ -5,7 +5,16 @@ import logging
 
 import anyio
 from fastapi import HTTPException
-from synvya_sdk import NostrClient, NostrKeys, Profile, ProfileType, Stall, StallShippingMethod
+from synvya_sdk import (
+    NostrClient,
+    NostrKeys,
+    Product,
+    ProductShippingCost,
+    Profile,
+    ProfileType,
+    Stall,
+    StallShippingMethod,
+)
 
 from retail_backend.core.models import MerchantProfile
 from retail_backend.core.settings import Provider
@@ -64,7 +73,7 @@ async def get_nostr_profile(private_key: str) -> MerchantProfile:
             if "nip05" in profile_data and profile_data["nip05"] is None:
                 profile_data["nip05"] = profile_data["name"] + "@synvya.com"
 
-            logger.info("_get_nostr_profile: NIP05: %s", profile_data["nip05"])
+            logger.debug("_get_nostr_profile: NIP05: %s", profile_data["nip05"])
 
             # Ensure hashtags and locations are lists, not None
             if "hashtags" in profile_data and profile_data["hashtags"] is None:
@@ -138,9 +147,7 @@ async def set_nostr_profile(profile: MerchantProfile, private_key: str) -> None:
             sdk_profile.set_picture(profile.picture)
 
             if profile.nip05 == "":
-                logger.info("NIP-05 is empty. Setting to %s", profile.name + "@synvya.com")
                 profile.nip05 = profile.name + "@synvya.com"
-            logger.info("_set_nostr_profile: NIP-05: %s", profile.nip05)
             sdk_profile.set_nip05(profile.nip05)
             # Convert string profile_type to ProfileType enum
             try:
@@ -208,20 +215,34 @@ async def set_nostr_stall(provider: Provider, location: dict, private_key: str) 
         raise HTTPException(status_code=400, detail="Unsupported provider")
 
 
-async def set_nostr_product(provider: Provider, product: dict, private_key: str) -> bool:
+async def set_nostr_products(
+    provider: Provider,
+    products: list[dict],
+    categories: list[dict],
+    images: list[dict],
+    private_key: str,
+) -> dict:
     """
     Asynchronously publishes the Nostr Product to the Nostr relay
 
     Args:
         provider (Provider): Provider of the product ("square" or "shopify")
-        product (dict): Product data
+        products (list[dict]): List of products
+        categories (list[dict]): List of categories
+        images (list[dict]): List of images
         private_key (str): Merchant Nostr private key.
 
     Returns:
-        bool: True if the Nostr Product was published successfully, False otherwise.
+        dict:
+        {
+            "products_published": int,
+            "products_failed": int,
+        }
     """
     if provider == Provider.SQUARE:
-        return await anyio.to_thread.run_sync(_set_nostr_product_square, product, private_key)
+        return await anyio.to_thread.run_sync(
+            _set_nostr_products_square, products, categories, images, private_key
+        )
     else:
         raise HTTPException(status_code=400, detail="Unsupported provider")
 
@@ -240,7 +261,7 @@ def _set_nostr_stall_square(location: dict, private_key: str) -> bool:
         bool: True if the Nostr Stall was published successfully, False otherwise.
     """
 
-    logger.info("Publishing Nostr stall for %s.", location["name"])
+    logger.debug("Publishing Nostr stall for %s.", location["name"])
 
     stall = Stall(
         id=location["id"],
@@ -262,7 +283,7 @@ def _set_nostr_stall_square(location: dict, private_key: str) -> bool:
         client = NostrClient(DEFAULT_RELAY, private_key=private_key)
 
         client.set_stall(stall)
-        logger.info("Successfully published stall to Nostr")
+        logger.debug("Successfully published stall to Nostr")
         return True
     except RuntimeError as e:
         logger.error("Error publishing stall to Nostr: %s", e)
@@ -272,33 +293,100 @@ def _set_nostr_stall_square(location: dict, private_key: str) -> bool:
             del client
 
 
-def _set_nostr_product_square(product: dict, private_key: str) -> bool:
+def _set_nostr_products_square(
+    products: list[dict], categories: list[dict], images: list[dict], private_key: str
+) -> dict:
     """
     Internal function to publish the Nostr Product to the Nostr relay
 
     Args:
-        product (dict): Product data
+        products (list[dict]): List of products
+        categories (list[dict]): List of categories
+        images (list[dict]): List of images
         private_key (str): Merchant Nostr private key.
 
     Returns:
-        bool: True if the Nostr Product was published successfully, False otherwise.
+        dict:
+        {
+            "products_published": int,
+            "products_failed": int,
+        }
     """
+    try:
+        client = NostrClient(DEFAULT_RELAY, private_key=private_key)
+        stalls = client.get_stalls(NostrKeys.derive_public_key(private_key))
+        if not stalls:
+            logger.error("No stalls found for merchant.")
+            if client:
+                del client
+            return {"products_published": 0, "products_failed": len(products)}
+    except RuntimeError as e:
+        logger.error("Error getting stalls: %s", e)
+        if client:
+            del client
+        logger.error("Error creating the Nostr client: %s", e)
+        return {"products_published": 0, "products_failed": len(products)}
 
-    logger.info("Publishing Nostr product for %s.", product["name"])
+    products_published = 0
+    products_failed = 0
 
-    logger.info("Product: %s", product)
-    return True
+    nostr_products: list[Product] = []
 
-    # try:
-    #     # Create a NostrClient
-    #     client = NostrClient(DEFAULT_RELAY, private_key=private_key)
+    for product in products:
+        product_image_ids = set(product["item_data"]["image_ids"])
+        product_images = [
+            image["image_data"]["url"] for image in images if image["id"] in product_image_ids
+        ]
 
-    #     client.set_product(product)
-    #     logger.info("Successfully published product to Nostr")
-    #     return True
-    # except RuntimeError as e:
-    #     logger.error("Error publishing product to Nostr: %s", e)
-    #     return False
-    # finally:
-    #     if client:
-    #         del client
+        product_category_ids = {cat["id"] for cat in product["item_data"]["categories"]}
+
+        product_categories = [
+            category["category_data"]["name"]
+            for category in categories
+            if category["id"] in product_category_ids
+        ]
+
+        nostr_product = Product(
+            id=product["id"],
+            stall_id=stalls[0].id,
+            name=product["item_data"]["name"],
+            description=product["item_data"]["description"],
+            images=product_images,
+            currency=product["item_data"]["variations"][0]["item_variation_data"]["price_money"][
+                "currency"
+            ],
+            price=product["item_data"]["variations"][0]["item_variation_data"]["price_money"][
+                "amount"
+            ]
+            / 100,
+            quantity=100,
+            shipping=[
+                ProductShippingCost(
+                    psc_id=stalls[0].id,
+                    psc_cost=0.0,
+                )
+            ],
+            categories=product_categories,
+            specs=[],
+            seller=NostrKeys.derive_public_key(private_key),
+        )
+        nostr_products.append(nostr_product)
+
+    for nostr_product in nostr_products:
+        try:
+            result = client.set_product(nostr_product)
+            if result:
+                products_published += 1
+            else:
+                products_failed += 1
+        except RuntimeError as e:
+            products_failed += 1
+            logger.error("Error publishing Square catalog product: %s", str(e))
+        except Exception as e:
+            logger.error("Unexpected error: %s: %s.", type(e).__name__, str(e))
+            products_failed += 1
+
+    if client:
+        del client
+
+    return {"products_published": products_published, "products_failed": products_failed}

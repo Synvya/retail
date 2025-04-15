@@ -25,7 +25,7 @@ from retail_backend.core.auth import TokenData, create_access_token, get_current
 from retail_backend.core.database import SessionLocal
 from retail_backend.core.merchant import (
     get_nostr_profile,
-    set_nostr_product,
+    set_nostr_products,
     set_nostr_profile,
     set_nostr_stall,
 )
@@ -92,7 +92,7 @@ def create_square_router(
             f"response_type=code&"
             f"state={state}"
         )
-        logger.info("OAuth received. Redirecting to: %s", oauth_url)
+        logger.debug("OAuth received. Redirecting to: %s", oauth_url)
         return RedirectResponse(oauth_url)
 
     @router.get("/oauth/callback")
@@ -120,10 +120,10 @@ def create_square_router(
             state (str | None): The state parameter from the initial request.
             db (Session): The database session.
         """
-        logger.info("OAuth callback received: code=%s... state=%s", code[:5], state)
-        logger.info("Request headers: %s", dict(request.headers))
+        logger.debug("OAuth callback received: code=%s... state=%s", code[:5], state)
+        logger.debug("Request headers: %s", dict(request.headers))
         oauth_api = client.o_auth
-        logger.info("Obtaining token from Square API")
+        logger.debug("Obtaining token from Square API")
         result = oauth_api.obtain_token(
             body={
                 "client_id": settings.app_id,
@@ -138,7 +138,7 @@ def create_square_router(
             logger.error("Error obtaining token from Square API: %s", result.errors)
             raise HTTPException(status_code=400, detail=result.errors)
 
-        logger.info("Successfully obtained token from Square API")
+        logger.debug("Successfully obtained token from Square API")
         merchant_id = result.body["merchant_id"]
         access_token = result.body["access_token"]
 
@@ -151,7 +151,7 @@ def create_square_router(
 
         if existing_credentials:
             # Update only the access token for existing merchants
-            logger.info("Updating existing merchant: %s", merchant_id)
+            logger.debug("Updating existing merchant: %s", merchant_id)
             existing_credentials.square_merchant_token = access_token
             db.commit()
             private_key = existing_credentials.nostr_private_key
@@ -159,7 +159,7 @@ def create_square_router(
                 raise HTTPException(status_code=400, detail="Private key not found for merchant")
         else:
             # Generate a new private key only for new merchants
-            logger.info("Creating new merchant: %s", merchant_id)
+            logger.debug("Creating new merchant: %s", merchant_id)
             keys = generate_keys(env_var="", env_path=Path("/dev/null"))
             private_key = keys.get_private_key()
 
@@ -173,7 +173,7 @@ def create_square_router(
             db.commit()
 
             # Create a Square client with the merchant's access token
-            logger.info("Creating Square client with merchant token")
+            logger.debug("Creating Square client with merchant token")
             merchant_square_client = Client(
                 access_token=access_token, environment=settings.environment
             )
@@ -186,14 +186,14 @@ def create_square_router(
                 logger.error("Error publishing profile (continuing OAuth flow): %s", str(e))
 
         # Generate JWT token
-        logger.info(
+        logger.debug(
             "Generating JWT token for public key: %s", NostrKeys.derive_public_key(private_key)
         )
         frontend_auth_token = create_access_token(merchant_id)
 
         # Use the state parameter as the frontend callback URL or use default
         frontend_callback_url = state or "http://localhost:3000/auth/callback"
-        logger.info("Frontend callback URL: %s", frontend_callback_url)
+        logger.debug("Frontend callback URL: %s", frontend_callback_url)
 
         # Construct redirect URL without the private key
         redirect_url = (
@@ -203,7 +203,7 @@ def create_square_router(
             f"profile_published={str(profile_published).lower()}"
         )
 
-        logger.info(
+        logger.debug(
             "Redirecting to: %s with profile_published=%s",
             frontend_callback_url,
             profile_published,
@@ -425,29 +425,31 @@ def create_square_router(
             environment="sandbox",
         )
 
-        catalog_response = merchant_square_client.catalog.list_catalog()
+        items_response = merchant_square_client.catalog.list_catalog(types="ITEM")
+        categories_response = merchant_square_client.catalog.list_catalog(types="CATEGORY")
+        images_response = merchant_square_client.catalog.list_catalog(types="IMAGE")
 
-        if not catalog_response.is_success():
-            logger.error("Error fetching catalog: %s", catalog_response.errors)
+        if not items_response.is_success():
+            logger.error("Error fetching catalog: %s", items_response.errors)
             return {"message": "Failed to publish catalog: Error fetching catalog"}
 
-        products = catalog_response.body.get("objects", [])
+        if not categories_response.is_success():
+            logger.error("Error fetching categories: %s", categories_response.errors)
+            return {"message": "Failed to publish catalog: Error fetching categories"}
+
+        if not images_response.is_success():
+            logger.error("Error fetching images: %s", images_response.errors)
+            return {"message": "Failed to publish catalog: Error fetching images"}
+
+        products = items_response.body.get("objects", [])
+        categories = categories_response.body.get("objects", [])
+        images = images_response.body.get("objects", [])
 
         products_published = 0
         products_failed = 0
 
-        for product in products:
-            logger.info("Publishing product as Nostr Product: %s", product)
-            published = await set_nostr_product(Provider.SQUARE, product, private_key)
-            if published:
-                products_published += 1
-            else:
-                products_failed += 1
-
-        return {
-            "products_published": products_published,
-            "products_failed": products_failed,
-        }
+        logger.info("Publishing catalog items as Nostr Products: %s", products)
+        return await set_nostr_products(Provider.SQUARE, products, categories, images, private_key)
 
     return router
 
