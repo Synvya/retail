@@ -97,7 +97,7 @@ app.include_router(auth.router, prefix="/api/v1")
 async def root() -> dict:
     """Root endpoint."""
     logger.debug("GET / received")
-    return {"message": "Welcome to the Retail API"}
+    return {"message": "Welcome to the Synvya Retail BackendAPI"}
 
 
 # @app.middleware("http")
