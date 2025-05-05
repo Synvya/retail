@@ -15,8 +15,12 @@ from retail_backend.core.dependencies import get_settings, get_square_base_url, 
 from retail_backend.core.settings import Provider, SquareSettings
 from retail_backend.plugins.square import create_square_router
 
-# Setup logging
-logging.basicConfig(level=logging.INFO)
+# More detailed logging configuration
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
+    handlers=[logging.StreamHandler()],  # This sends logs to console/stdout
+)
 logger = logging.getLogger("api")
 
 
@@ -55,7 +59,7 @@ app = FastAPI(
 )
 
 # Add request tracing middleware
-# app.add_middleware(RequestTracingMiddleware)
+app.add_middleware(RequestTracingMiddleware)
 
 # Configure CORS
 app.add_middleware(
