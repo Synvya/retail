@@ -65,6 +65,7 @@ app.add_middleware(
         "http://127.0.0.1:3000",
         "https://square-profile-pilot.lovable.app",
         "https://square.synvya.com",
+        "https://lovable.dev/projects/e870f7b7-1074-4809-88f2-952bc8337d54",
     ],
     allow_origin_regex=r"https://.*\.lovableproject\.com",
     allow_credentials=True,
