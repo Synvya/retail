@@ -22,7 +22,7 @@ from retail_backend.core.settings import Provider
 # Setup module-level logger
 logger = logging.getLogger("merchant")
 
-DEFAULT_RELAY = "wss://relay.damus.io"
+DEFAULT_RELAY = "wss://relay.primal.net"
 
 
 async def get_nostr_profile(private_key: str) -> MerchantProfile:
