@@ -151,7 +151,7 @@ def create_square_router(
 
         if existing_credentials:
             # Update only the access token for existing merchants
-            logger.debug("Updating existing merchant: %s", merchant_id)
+            logger.info("Updating existing merchant: %s", merchant_id)
             existing_credentials.square_merchant_token = access_token
             db.commit()
             private_key = existing_credentials.nostr_private_key
@@ -159,7 +159,7 @@ def create_square_router(
                 raise HTTPException(status_code=400, detail="Private key not found for merchant")
         else:
             # Generate a new private key only for new merchants
-            logger.debug("Creating new merchant: %s", merchant_id)
+            logger.info("Creating new merchant: %s", merchant_id)
             keys = generate_keys(env_var="", env_path=Path("/dev/null"))
             private_key = keys.get_private_key()
 
@@ -180,6 +180,7 @@ def create_square_router(
             # Publish profile for new merchants
             try:
                 profile = MerchantProfile.from_square_data(merchant_square_client)
+                logger.info("New merchant profile data: %s", profile.model_dump_json())
                 await set_nostr_profile(profile, private_key)
                 profile_published = True
             except Exception as e:
@@ -203,6 +204,7 @@ def create_square_router(
             f"profile_published={str(profile_published).lower()}"
         )
 
+        logger.info("Redirect URL: %s", redirect_url)
         logger.debug(
             "Redirecting to: %s with profile_published=%s",
             frontend_callback_url,
@@ -254,7 +256,7 @@ def create_square_router(
         # Get the merchant's credentials from the database
         try:
             square_credentials = get_square_credentials(current_merchant, db)
-            logger.debug("Retrieved merchant credentials from database")
+            logger.info("Retrieved merchant credentials from database")
         except HTTPException as e:
             logger.error("Error retrieving credentials: %s", str(e))
             raise
@@ -268,10 +270,12 @@ def create_square_router(
 
         # Get the profile from Nostr
         try:
-            logger.debug("Fetching profile from Nostr")
+            logger.info("Fetching profile from Nostr")
             profile = await get_nostr_profile(square_credentials.nostr_private_key)
-            logger.debug(
-                "Successfully retrieved profile for merchant: %s", current_merchant.merchant_id
+            logger.info(
+                "Profile retrieved for %s: %s",
+                current_merchant.merchant_id,
+                profile.model_dump_json(),
             )
             return profile
         except HTTPException as e:

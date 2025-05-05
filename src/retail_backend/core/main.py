@@ -59,7 +59,7 @@ app = FastAPI(
 )
 
 # Add request tracing middleware
-app.add_middleware(RequestTracingMiddleware)
+# app.add_middleware(RequestTracingMiddleware)
 
 # Configure CORS
 app.add_middleware(

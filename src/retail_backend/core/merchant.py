@@ -38,7 +38,9 @@ async def get_nostr_profile(private_key: str) -> MerchantProfile:
     Raises:
         HTTPException: If the merchant Nostr Profile is not found.
     """
-    logger.debug("Getting Nostr profile...")
+    logger.info("Getting Nostr profile with private key (first 5 chars): %s...", private_key[:5])
+    public_key = NostrKeys.derive_public_key(private_key)
+    logger.info("Derived public key (first 8 chars): %s...", public_key[:8])
 
     # Use anyio.to_thread.run_sync to run NostrClient in a separate thread
     def _get_nostr_profile() -> MerchantProfile:
@@ -53,7 +55,7 @@ async def get_nostr_profile(private_key: str) -> MerchantProfile:
 
             # Convert the profile to JSON and then to our MerchantProfile model
             profile_data = json.loads(profile.to_json())
-            logger.debug("Profile data: %s.", profile_data)
+            logger.info("Raw profile data from Nostr: %s", profile_data)
 
             # Ensure all string fields have valid string values (not None)
             string_fields = [
@@ -118,7 +120,12 @@ async def set_nostr_profile(profile: MerchantProfile, private_key: str) -> None:
     Raises:
         ValueError: If the Nostr Profile data is invalid
     """
-    logger.debug("Setting Nostr profile for %s.", profile.name)
+    logger.info(
+        "Setting Nostr profile for %s with key (first 5 chars): %s...",
+        profile.name,
+        private_key[:5],
+    )
+    logger.info("Profile data being published: %s", profile.model_dump_json())
 
     # Use anyio.to_thread.run_sync to run NostrClient in a separate thread
     def _set_nostr_profile() -> None:
