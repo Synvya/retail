@@ -16,7 +16,6 @@ from urllib.parse import quote
 
 from fastapi import APIRouter, Depends, HTTPException, Request
 from fastapi.responses import RedirectResponse
-from sqlalchemy import and_
 from sqlalchemy.orm import Session
 from square.client import Client
 from synvya_sdk import NostrKeys, generate_keys
@@ -76,7 +75,7 @@ def create_square_router(
     @router.get("/oauth")
     async def initiate_oauth(redirect_uri: str | None = None) -> RedirectResponse:
         """Initiate OAuth flow."""
-        scope = "MERCHANT_PROFILE_READ ITEMS_READ"
+        scope = "MERCHANT_PROFILE_READ ITEMS_READ LOCATIONS_READ"
 
         # Create state parameter with redirect_uri to retrieve it in callback
         state = redirect_uri or "http://localhost:3000/auth/callback"
@@ -165,6 +164,7 @@ def create_square_router(
                 merchant_id=merchant_id,
                 square_merchant_token=access_token,
                 nostr_private_key=private_key,
+                environment=settings.environment,
             )
             db.add(new_credentials)
             db.commit()
