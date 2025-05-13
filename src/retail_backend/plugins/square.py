@@ -75,7 +75,7 @@ def create_square_router(
     @router.get("/oauth")
     async def initiate_oauth(redirect_uri: str | None = None) -> RedirectResponse:
         """Initiate OAuth flow."""
-        scope = "MERCHANT_PROFILE_READ ITEMS_READ LOCATIONS_READ"
+        scope = "MERCHANT_PROFILE_READ ITEMS_READ"
 
         # Create state parameter with redirect_uri to retrieve it in callback
         state = redirect_uri or "http://localhost:3000/auth/callback"
