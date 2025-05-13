@@ -2,11 +2,16 @@
 Settings for the retail application.
 """
 
+import logging
 import os
 from enum import Enum
+from typing import Any
 
 from dotenv import load_dotenv
 from pydantic_settings import BaseSettings, SettingsConfigDict
+
+# Setup logger
+logger = logging.getLogger("settings")
 
 SQUARE_VERSION = "2025-03-19"
 SQUARE_BASE_URL_SANDBOX = "https://connect.squareupsandbox.com"
@@ -14,6 +19,9 @@ SQUARE_BASE_URL_PRODUCTION = "https://connect.squareup.com"
 
 load_dotenv()
 
+# Log the environment value from .env
+env_value = os.getenv("ENVIRONMENT", "not set")
+logger.info("ENVIRONMENT variable from .env: %s", env_value)
 
 SQUARE_OAUTH_REDIRECT_URI = os.getenv(
     "SQUARE_REDIRECT_URI", "http://localhost:8000/square/oauth/callback"
@@ -36,7 +44,7 @@ class SquareSettings(BaseSettings):
 
     square_app_id: str = ""
     square_app_secret: str = ""
-    environment: str = "sandbox"  # Default to sandbox if not provided in environment
+    environment: str = os.getenv("ENVIRONMENT", "sandbox")  # Read from ENVIRONMENT env var directly
     developer_access_token: str = ""
     square_redirect_uri: str = ""
     jwt_secret_key: str = ""
@@ -49,6 +57,10 @@ class SquareSettings(BaseSettings):
         # env_prefix="SQUARE_",
         extra="ignore",
     )
+
+    def __init__(self, **data: Any) -> None:
+        super().__init__(**data)
+        logger.info("SquareSettings initialized with environment: %s", self.environment)
 
     @property
     def app_id(self) -> str:

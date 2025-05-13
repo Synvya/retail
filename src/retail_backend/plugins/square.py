@@ -60,6 +60,12 @@ def get_square_credentials(
     if not credentials:
         raise HTTPException(status_code=404, detail="Merchant OAuth token not found")
 
+    logger.info(
+        "Retrieved credentials for merchant %s with environment: %s",
+        current_merchant.merchant_id,
+        credentials.environment,
+    )
+
     return credentials
 
 
@@ -166,6 +172,11 @@ def create_square_router(
                 nostr_private_key=private_key,
                 environment=settings.environment,
             )
+            logger.info(
+                "Creating new merchant with ID %s and environment %s",
+                merchant_id,
+                settings.environment,
+            )
             db.add(new_credentials)
             db.commit()
 
@@ -174,6 +185,7 @@ def create_square_router(
             merchant_square_client = Client(
                 access_token=access_token, environment=settings.environment
             )
+            logger.info("Created merchant Square client with environment: %s", settings.environment)
             # Publish profile for new merchants
             try:
                 profile = MerchantProfile.from_square_data(merchant_square_client)
@@ -430,6 +442,12 @@ def create_square_router(
         merchant_square_client = Client(
             access_token=square_credentials.square_merchant_token,
             environment=square_credentials.environment,
+        )
+
+        logger.info(
+            "Square client created with token: %s and environment: %s",
+            square_credentials.square_merchant_token,
+            square_credentials.environment,
         )
 
         items_response = merchant_square_client.catalog.list_catalog(types="ITEM")
