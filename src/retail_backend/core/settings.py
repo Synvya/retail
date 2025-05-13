@@ -36,7 +36,7 @@ class SquareSettings(BaseSettings):
 
     square_app_id: str = ""
     square_app_secret: str = ""
-    environment: str = "sandbox"
+    environment: str = "sandbox"  # Default to sandbox if not provided in environment
     developer_access_token: str = ""
     square_redirect_uri: str = ""
     jwt_secret_key: str = ""

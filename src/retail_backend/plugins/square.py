@@ -53,10 +53,7 @@ def get_square_credentials(
     credentials = (
         db.query(SquareMerchantCredentials)
         .filter(
-            and_(
-                SquareMerchantCredentials.environment == "sandbox",
-                SquareMerchantCredentials.merchant_id == current_merchant.merchant_id,
-            )
+            SquareMerchantCredentials.merchant_id == current_merchant.merchant_id,
         )
         .first()
     )
@@ -223,7 +220,7 @@ def create_square_router(
         # Create a new client with the merchant's access token
         merchant_client = Client(
             access_token=square_credentials.square_merchant_token,
-            environment="sandbox",
+            environment=square_credentials.environment,
         )
 
         merchant_response = merchant_client.merchants.retrieve_merchant("me")
@@ -375,7 +372,7 @@ def create_square_router(
 
         merchant_square_client = Client(
             access_token=square_credentials.square_merchant_token,
-            environment="sandbox",
+            environment=square_credentials.environment,
         )
 
         locations_response = merchant_square_client.locations.list_locations()
@@ -426,7 +423,7 @@ def create_square_router(
 
         merchant_square_client = Client(
             access_token=square_credentials.square_merchant_token,
-            environment="sandbox",
+            environment=square_credentials.environment,
         )
 
         items_response = merchant_square_client.catalog.list_catalog(types="ITEM")

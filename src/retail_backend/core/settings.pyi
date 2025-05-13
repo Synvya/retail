@@ -51,5 +51,3 @@ class ShopifySettings(BaseSettings):
     access_token: str = ""
     environment: str = "development"
     redirect_uri: str = "http://localhost:8000/shopify/oauth/callback"
-
-def get_settings(provider: Provider) -> SquareSettings | ShopifySettings: ...
