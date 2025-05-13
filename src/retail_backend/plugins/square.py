@@ -375,6 +375,12 @@ def create_square_router(
             environment=square_credentials.environment,
         )
 
+        logger.info(
+            "Square client created with token: %s and environment: %s",
+            square_credentials.square_merchant_token,
+            square_credentials.environment,
+        )
+
         locations_response = merchant_square_client.locations.list_locations()
 
         if not locations_response.is_success():
