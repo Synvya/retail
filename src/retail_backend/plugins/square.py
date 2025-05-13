@@ -83,7 +83,7 @@ def create_square_router(
         oauth_url = (
             f"{square_base_url}/oauth2/authorize?"
             f"client_id={settings.square_app_id}&"
-            f"scope={scope}&"
+            f"scope={quote(scope)}&"
             f"redirect_uri={settings.square_redirect_uri}&"
             f"response_type=code&"
             f"state={state}"
